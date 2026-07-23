@@ -33,6 +33,12 @@ npm run build && npm start   # produção
 - `GET  /api/search?q=` → busca no Mercado Livre, **cacheada no Redis**, com margem/imposto BR
 - `GET  /api/me`      → placeholder (SuperTokens entra na próxima etapa)
 
+## Observações (Mercado Livre)
+A API pública de search do ML pode retornar `403 Forbidden` vindo de IPs de datacenter/VM
+(ML bloqueia chamadas anônimas de certos IPs). Em produção (Vercel/Railway) ou da sua
+máquina geralmente funciona. Para garantir, configure `ML_APP_ID` + `ML_APP_SECRET` —
+o `src/lib/ml.ts` já faz a chamada autenticada (Bearer token) quando essas vars existem.
+
 ## Próximos passos
 1. SuperTokens (Google social) + `/api/me` real
 2. `/api/saved-products` e `/api/alerts` (com RLS + escopo por user)
