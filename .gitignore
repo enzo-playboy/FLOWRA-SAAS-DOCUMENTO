@@ -22,3 +22,7 @@ claude-council/
 claude-skills-temp/
 alirezarezvani-claude-skills/
 lovable-export/
+
+
+# Nested duplicates
+claude-skills/claude-skills/
