@@ -1,149 +1,197 @@
-# PRODFIND — Product Requirements Document
+# PRODFIND — PRD de Produto (Lovable = FRONTEND)
 
-## 📋 Resumo Executivo
+> **PRD oficial para o Lovable construir o FRONTEND do ProdFind.**
+> **Decisão de arquitetura (23/07): o Lovable faz SÓ O FRONTEND.** O backend (banco, auth, integrações) é construído **SEPARADAMENTE ("por fora")** e exposto via API REST. O frontend consome essa API.
+> Preços finais: START R$79 / PRO R$147 / AGÊNCIA R$297 (trial 7d s/ cartão). Idioma: **PT-BR**.
 
-**ProdFind** é um SaaS brasileiro de product research para sellers de Mercado Livre e TikTok Shop. Ajuda sellers a descobrirem produtos campeões, analisar tendências de mercado, calcular margens reais e encontrar fornecedores — tudo em uma plataforma.
+## 1. O que é o ProdFind (Visão)
 
-**Tagline:** "Descubra o próximo produto campeão"
+**ProdFind** é um SaaS brasileiro de *product research* + *supply chain intelligence* para sellers de **Mercado Livre** e (depois) **TikTok Shop**.
 
-## 🎯 Problema
+Ele ajuda o seller a:
+- Descobrir **produtos campeões** no Mercado Livre (via API oficial, grátis)
+- Ver **score de demanda** (IA) e tendência de cada produto
+- Calcular **margem líquida real** incluindo **imposto de importação BR** (II 60% + ICMS por estado + frete)
+- Encontrar **fornecedor sugerido** (CJ Dropshipping / AliExpress) com preço de custo
+- Receber **alertas** quando um produto entra em alta
 
-Sellers brasileiros de marketplace não têm ferramentas nacionais de inteligência de produto. As opções existentes são:
-- Internacionais (Kalodata, Tabcut, Nox) — caras (USD $50-500/mês), sem dados BR, UI em inglês/mandarim
-- Planilhas manuais — trabalho braçal, sujeito a erro
-- "Na tentativa e erro" — sellers compram estoque sem saber se vai vender
+**Tagline:** *"Descubra o próximo produto campeão."*
 
-## 👥 Público-Alvo
-
-| Perfil | Descrição | Quantidade | Disposição a Pagar |
-|--------|-----------|-----------|-------------------|
-| **MEI / PF** | Seller casual no ML, fatura R$ 2-8k/mês | ~400k | R$ 37-57/mês |
-| **Pequeno PJ** | Loja formalizada, 1-5 funcionários, R$ 15-80k/mês | ~150k | R$ 57-147/mês |
-| **Médio PJ** | Seller profissional, múltiplos canais, R$ 80k+/mês | ~50k | R$ 147-297/mês |
-| **Criador de Conteúdo** | Faz lives/ vídeos no TikTok Shop | ~15k | R$ 37-57/mês |
-
-**TAM:** ~600k sellers ativos no Brasil (ML + TikTok)
-
-## 💰 Modelo de Negócio
-
-### Planos
-
-| Plano | Preço | Funcionalidades | Público |
-|-------|-------|----------------|---------|
-| 🆓 **Trial** | **Grátis 7 dias** | ML completo, ilimitado | Qualquer um |
-| 🟢 **START** | **R$ 37/mês** | ML + score IA + alerts básicos | MEI / iniciante |
-| 🔵 **PRO** | **R$ 57/mês** | ML + TikTok + extensão Chrome + margem BR + alerts tempo real | Seller profissional |
-| 🏢 **Agência** | R$ 297/mês | API + multi-usuário + white-label | Agências (futuro) |
-
-### Monetização Adicional
-
-**Comissão de Afiliados (Revenue Share):**
-- Cada produto descoberto tem link de afiliado (ML, Shopee, AliExpress)
-- ProdFind ganha 3-8% sobre cada venda gerada
-- Seller paga o mesmo preço — não sai do bolso dele
-- Projeção: +15-30% sobre receita de assinatura
-
-### Projeções Financeiras
-
-| Cenário | Assinantes | Receita Assinatura | + Afiliados | Lucro Líquido |
-|---------|-----------|-------------------|-------------|---------------|
-| 🚶 Péssimo | 3 PRO | R$ 165/mês | R$ 178/mês | R$ 124/mês |
-| 👍 OK | 10 START + 5 PRO | R$ 629/mês | R$ 696/mês | R$ 642/mês |
-| 🔥 Bom | 30 START + 15 PRO | R$ 1.886/mês | R$ 2.088/mês | R$ 2.034/mês |
-| 🚀 Crescendo | 80 START + 40 PRO | R$ 5.028/mês | R$ 5.568/mês | R$ 5.514/mês |
-
-**Break-even:** 1 assinante PRO cobre custos fixos (servidor + domínio)
-
-## 🏗️ Arquitetura do Produto
-
-### MVP — Fase 1 (Agora)
-
-```
-Frontend: Landing page HTML + cadastro via Supabase
-Backend: API Mercado Livre (grátis)
-Banco: Supabase
-Pagamento: Stripe + Asaas (PIX/boleto)
-Autenticação: SuperTokens (grátis até 5k usuários)
-```
-
-### Fase 2 — SaaS Web
-
-```
-Frontend: Next.js + Tailwind
-Backend: Next.js API Routes + Supabase Edge Functions
-Banco: Supabase
-Pagamento: Stripe (cartão) + Asaas (PIX/boleto)
-Auth: SuperTokens
-Deploy: Vercel (R$ 0-50/mês)
-Domínio: R$ 4/mês
-```
-
-### Fase 3 — Expansão
-
-```
-+ TikTok Shop (scraping com proxies)
-+ Extensão Chrome
-+ Agentes IA (análise de logs, campanhas de marketing)
-+ API pública (plano Agência)
-```
-
-## 🧠 Stack Técnica
-
-| Componente | Tecnologia | Custo | Por quê |
-|-----------|-----------|-------|---------|
-| Frontend | Next.js 14 + Tailwind | R$ 0 | SSR, SEO, performance |
-| Backend | Next.js API + Edge Functions | R$ 0-50/mês | Zero-config, serverless |
-| Banco | Supabase (PostgreSQL) | R$ 0 (500MB grátis) | Já configurado |
-| Auth | SuperTokens | R$ 0 (5k usuários) | Open source, self-hosted |
-| Pagamento | Stripe + Asaas | 2,9% + R$ 0,50 | Cartão + PIX/boleto |
-| Domínio | registry.br | R$ 50/ano | .com.br |
-
-## 📊 Fluxo do Usuário (MVP)
-
-```
-1. LANDING PAGE → vê planos R$37/R$57
-2. CADASTRO → email + senha (SuperTokens)
-3. TRIAL 7 DIAS → acesso completo ML
-4. BUSCA → digita categoria/produto
-5. RESULTADOS → lista de produtos com:
-   ├── Preço médio
-   ├── Score de demanda (1-10)
-   ├── Tendência (↑ estável ↓)
-   ├── Número de vendedores
-   ├── Margem estimada
-   └── Fornecedor sugerido
-6. PAGAMENTO → cartão/PIX via Stripe/Asaas
-7. USO CONTÍNUO → dashboard, alerts, favoritos
-8. ACOMPANHAMENTO → histórico de preços, tendências
-```
-
-## 🗺️ Roadmap
-
-| Fase | O que | Prazo |
-|------|-------|-------|
-| 🏁 **MVP** | Landing + cadastro + busca ML + pagamento | 2-3 semanas |
-| 🚀 **V1.1** | Score IA + alerts + favoritos | Semana 4-5 |
-| 🔥 **V1.2** | TikTok Shop + margem BR | Semana 6-8 |
-| 🧩 **V2.0** | Extensão Chrome | Semana 8-10 |
-| 🤖 **V2.1** | Agentes IA (logs, marketing) | Semana 10-12 |
-| 🏢 **V3.0** | API + multi-usuário + white-label | Pós-validação |
-
-## 📈 Métricas de Sucesso (Primeiros 3 Meses)
-
-- ✅ Landing page no ar (semana 1)
-- ✅ 50+ leads capturados (semana 2)
-- ✅ 10+ trials ativos (semana 3)
-- ✅ 3+ assinantes pagos (mês 1)
-- ✅ 20+ assinantes pagos (mês 3)
-- ✅ Churn < 5% mensal
-- ✅ NPS > 50
-
-## 🧑‍💼 Time
-
-- **Enzo (CEO/Produto)** — Visão, estratégia, vendas
-- **Hermes Agent (CTO interino)** — Arquitetura, desenvolvimento, agentes IA
-- **Agentes IA (futuro)** — Automação de logs, marketing, suporte
+**Diferencial (gap de mercado):** não existe ferramenta BR que junte descoberta + fornecedor + imposto BR + margem num só lugar.
 
 ---
 
-*Documento criado em 23/07/2026 após pesquisa de mercado, análise de concorrência e Conselho de LLMs.*
+## 2. Problema e Público
+
+Sellers BR não têm inteligência de produto nacional:
+- Internacionais (Kalodata, Tabcut): caras (USD 50–300/mês), sem dados BR, UI em inglês/mandarim
+- Planilhas manuais: trabalho braçal, sujeito a erro
+- "Na tentativa e erro": compram estoque sem saber se vai vender
+
+| Perfil | Descrição | Plano |
+|--------|-----------|-------|
+| **MEI / PF** | Seller casual no ML, R$ 2–8k/mês | START (R$ 79/mês) |
+| **Pequeno PJ** | Loja formal, R$ 15–80k/mês | PRO (R$ 147/mês) |
+| **Médio PJ / Agência** | Multi-canal, R$ 80k+/mês | AGÊNCIA (R$ 297/mês) |
+
+**TAM:** ~600k sellers ativos no Brasil (ML + TikTok).
+
+---
+
+## 3. Modelo de Negócio (Planos FINAIS)
+
+| Plano | Preço | Inclui | Público |
+|-------|-------|--------|---------|
+| 🆫 **Trial** | **Grátis 7 dias, SEM cartão** | ML completo, ilimitado | Qualquer um |
+| 🟢 **START** | **R$ 79/mês** | ML + score IA + fornecedor + imposto BR + margem | MEI / iniciante |
+| 🔵 **PRO** | **R$ 147/mês** | Tudo do START + TikTok (futuro) + extensão Chrome + alertas avançados | Seller profissional |
+| 🏢 **AGÊNCIA** | **R$ 297/mês** | API + white-label + 5 seats + dados exclusivos | Agências (futuro) |
+
+**Monetização extra:** comissão de afiliados (3–8%) sobre produtos via link ML/Shopee/AliExpress.
+**Break-even:** 1 assinante START cobre custos fixos (margem ~97%).
+
+---
+
+## 4. Stack & Arquitetura
+
+### FRONTEND (construído no Lovable)
+| Camada | Tecnologia |
+|--------|-----------|
+| Framework | **Next.js 16** (App Router, Turbopack) |
+| UI | **React 19** + **Tailwind CSS v4** + componentes **shadcn/ui** |
+| Linguagem | **TypeScript 5** |
+| Auth (SDK) | **SuperTokens React** (aponta pro backend de auth) |
+| Idioma | **PT-BR** em toda a UI |
+| Deploy | Vercel / Railway |
+
+### BACKEND (feito POR FORA, separado do Lovable)
+| Camada | Tecnologia |
+|--------|-----------|
+| Banco de dados | **Supabase (instância própria)** via API — **NÃO** o Supabase nativo do Lovable |
+| Auth (core) | **SuperTokens** (Google social) |
+| Pagamento | **Stripe** (cartão) + **Asaas** (PIX/boleto) |
+| Dados | **Mercado Livre API** (oficial, grátis) |
+
+### Comunicação
+- Frontend ↔ Backend via **REST**, base URL em `NEXT_PUBLIC_API_URL`
+- O frontend NUNCA toca o banco direto — só chama a API do backend
+
+> ⚠️ **O Lovable constrói SÓ O FRONTEND.** Não criar banco, auth ou backend dentro do Lovable.
+> ⚠️ **NÃO usar o Supabase nativo do Lovable.**
+> ⚠️ **NÃO usar HTML solto** — gerar código Next 16 + Tailwind v4 real.
+
+---
+
+## 5. API Contract (o que o frontend espera do backend)
+
+Base: `NEXT_PUBLIC_API_URL`
+
+| Método | Endpoint | Corpo / Params | Retorno |
+|--------|----------|----------------|---------|
+| `POST` | `/api/leads` | `{ email, source }` | `{ ok }` |
+| `POST` | `/auth/google` | (SuperTokens) | sessão + usuário |
+| `GET` | `/api/me` | — | `{ id, email, plan, trial_ends_at, is_trial }` |
+| `GET` | `/api/search?q=<termo>` | query string | `{ items: [{ id, title, price_now, price_avg, demand_score, trend, sellers, cost, margin_pct, margin_value, supplier:{name,cost} }] }` |
+| `POST` | `/api/saved-products` | `{ product_external_id, cost, margin_pct }` | `{ ok }` |
+| `GET` | `/api/saved-products` | — | lista |
+| `POST` | `/api/alerts` | `{ product_external_id, threshold }` | `{ ok }` |
+| `GET` | `/api/alerts` | — | lista |
+| `POST` | `/api/checkout` | `{ plan }` | `{ url }` (Stripe session) |
+| `POST` | `/api/webhooks/stripe` | (interno) | atualiza assinatura |
+
+---
+
+## 6. MVP — Fase 1 (FRONTEND que o Lovable constrói)
+
+**Foque só nisso.** Backend já existe/aparece por fora.
+
+### 6.1 Landing Page (pública)
+- Hero + proposta de valor + CTA **"Continuar com Google"**
+- 3–6 cards de features (descoberta, score IA, margem c/ imposto, fornecedor)
+- Bloco de planos (START R$79 / PRO R$147 / AGÊNCIA R$297 + Trial 7d s/ cartão)
+- Captura de lead → `POST /api/leads`
+- Responsiva (mobile-first), SEO metadata PT-BR
+
+### 6.2 Autenticação (Trial)
+- SuperTokens React SDK → login Google social (core por fora)
+- Conta inicia trial 7d (backend)
+- Proteção de rotas do dashboard
+
+### 6.3 Dashboard de Busca (ML)
+- Input de categoria/termo → `GET /api/search?q=`
+- Resultados em cards com: preço, **score de demanda**, tendência, nº vendedores, **margem líquida** (c/ imposto BR), **fornecedor sugerido**
+- Favoritar (`POST /api/saved-products`) e criar alerta (`POST /api/alerts`)
+
+### 6.4 Cálculo de Margem / Imposto BR (no frontend, p/ exibição)
+- `lib/margin.ts`: II 60% + ICMS por estado + frete; `margin = price − (cost + II + ICMS + frete)`
+- Fonte de verdade (preço/custo) vem do backend; o cálculo é determinístico e roda no front
+
+### 6.5 Pricing / Checkout (pós-trial)
+- Tela de planos → `POST /api/checkout` → abre Stripe/Asaas (cartão ou PIX)
+
+---
+
+## 7. Modelo de Dados (BACKEND — referência, NÃO do Lovable)
+
+```sql
+users         (id uuid, email, plan text, trial_ends_at timestamptz, created_at)
+leads         (id, email, source, created_at)
+searches      (id, user_id, query, results_json, created_at)
+saved_products(id, user_id, product_external_id, cost, margin_pct, created_at)
+alerts        (id, user_id, product_external_id, threshold, created_at)
+subscriptions (id, user_id, plan, status, stripe_sub_id, created_at)
+```
+
+---
+
+## 8. Fluxo do Usuário (MVP)
+
+```
+1. LANDING → vê valor + planos (R$79 / R$147 / R$297 + trial 7d)
+2. "Continuar com Google" → SuperTokens (backend) → inicia trial 7d
+3. DASHBOARD → busca → GET /api/search?q=  (backend consome ML API)
+4. RESULTADOS → preço, score, tendência, margem (c/ imposto BR), fornecedor
+5. FAVORITA (POST /api/saved-products) / ALERTA (POST /api/alerts)
+6. PÓS-TRIAL → POST /api/checkout → Stripe/Asaas (cartão ou PIX)
+7. USO CONTÍNUO → buscas, favoritos, alertas
+```
+
+---
+
+## 9. FORA DO ESCOPO (fases posteriores — NÃO construir agora)
+
+- TikTok Shop (scraping) — Fase 3
+- Extensão Chrome — Fase 4
+- CJ Dropshipping como fulfillment/venda — adiado (risco operacional)
+- API pública + white-label (AGÊNCIA) — Fase 5
+- Agentes IA de marketing/suporte — pós-validação
+- i18n completo (só PT-BR por enquanto)
+
+---
+
+## 10. Direção de Design
+
+- Componentes **shadcn/ui** (Tailwind limpo, neutro, profissional)
+- Mobile-first, responsivo
+- CTA principal: **"Continuar com Google"**
+- Cores sóbrias (branco/cinza + 1 cor de destaque), não gradiente psicodélico
+- PT-BR em todo texto de UI
+- Tabelas/ícones para comunicar margem e score
+
+---
+
+## 11. Métricas de Sucesso (MVP)
+
+- Landing no ar (semana 1) · 50+ leads (semana 2) · 10+ trials (semana 3)
+- 3+ assinantes pagos (mês 1) · Churn < 5% mensal
+
+---
+
+## 12. Time
+
+- **Enzo** (CEO/Produto) — visão, estratégia, vendas
+- **Hermes Agent** — arquitetura, dev, agentes IA
+
+---
+
+*Atualizado 23/07/2026. Arquitetura: Lovable = frontend only; backend por fora (DB próprio via API, SuperTokens, Stripe/Asaas, ML API). Preços: START R$79 / PRO R$147 / AGÊNCIA R$297.*
