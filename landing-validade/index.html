@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProdFind — Produtos Campeões TikTok Shop + Mercado Livre</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Gradient mesh background */
+        .bg-mesh {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 80, 255, 0.15), transparent),
+                radial-gradient(ellipse 50% 50% at 80% 20%, rgba(255, 50, 100, 0.1), transparent),
+                radial-gradient(ellipse 50% 50% at 20% 80%, rgba(0, 200, 255, 0.08), transparent);
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Nav */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .logo {
+            font-weight: 800;
+            font-size: 1.4rem;
+            background: linear-gradient(135deg, #ff3366, #ff6633);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .logo span { color: #e0e0e0; -webkit-text-fill-color: #e0e0e0; }
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+        .nav-links a {
+            color: #888;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: #fff; }
+
+        /* Hero */
+        .hero {
+            padding: 100px 0 80px;
+            text-align: center;
+        }
+        .hero-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 100px;
+            background: rgba(120, 80, 255, 0.15);
+            border: 1px solid rgba(120, 80, 255, 0.25);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #a080ff;
+            margin-bottom: 24px;
+            letter-spacing: 0.5px;
+        }
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff 30%, #888 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero h1 .highlight {
+            background: linear-gradient(135deg, #ff3366, #ff6633, #ffcc00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p {
+            font-size: 1.15rem;
+            color: #888;
+            max-width: 650px;
+            margin: 0 auto 40px;
+        }
+        .hero-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 14px 32px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #ff3366, #ff6633);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(255, 50, 100, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(255, 50, 100, 0.4);
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.06);
+            color: #e0e0e0;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-2px);
+        }
+
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+            margin-top: 60px;
+            flex-wrap: wrap;
+        }
+        .hero-stat h3 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #fff;
+        }
+        .hero-stat p {
+            font-size: 0.85rem;
+            color: #666;
+            margin: 0;
+        }
+
+        /* Features */
+        .features {
+            padding: 100px 0;
+        }
+        .section-tag {
+            color: #ff6633;
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .features h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 16px;
+        }
+        .features > .container > p {
+            color: #888;
+            font-size: 1.05rem;
+            max-width: 550px;
+            margin-bottom: 60px;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+        .feature-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 32px;
+            transition: all 0.3s;
+        }
+        .feature-card:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.1);
+            transform: translateY(-4px);
+        }
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        .feature-card h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+        .feature-card p {
+            color: #777;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* Market Gap */
+        .market-gap {
+            padding: 80px 0;
+            background: rgba(255,255,255,0.02);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .market-gap .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+        .market-gap h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 16px;
+        }
+        .market-gap p {
+            color: #888;
+            margin-bottom: 20px;
+        }
+        .gap-list {
+            list-style: none;
+        }
+        .gap-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            color: #bbb;
+            font-size: 0.95rem;
+        }
+        .gap-list li::before {
+            content: "✗";
+            color: #ff4444;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .gap-list li:last-child { border: none; }
+        .solution-list {
+            list-style: none;
+        }
+        .solution-list li {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            color: #bbb;
+            font-size: 0.95rem;
+        }
+        .solution-list li::before {
+            content: "✓";
+            color: #44ff88;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .solution-list li:last-child { border: none; }
+
+        /* Pricing Preview */
+        .pricing {
+            padding: 100px 0;
+        }
+        .pricing h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+        .pricing > .container > p {
+            text-align: center;
+            color: #888;
+            margin-bottom: 60px;
+        }
+        .pricing-grid {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .pricing-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 40px 32px;
+            flex: 1;
+            min-width: 260px;
+            max-width: 320px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .pricing-card.featured {
+            border-color: rgba(255, 100, 50, 0.3);
+            background: rgba(255, 100, 50, 0.05);
+            position: relative;
+        }
+        .pricing-card.featured::before {
+            content: "MAIS POPULAR";
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #ff3366, #ff6633);
+            color: #fff;
+            padding: 4px 16px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .pricing-card h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        .pricing-card .price {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #fff;
+            margin: 16px 0;
+        }
+        .pricing-card .price span {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #888;
+        }
+        .pricing-card ul {
+            list-style: none;
+            text-align: left;
+            margin: 24px 0;
+        }
+        .pricing-card ul li {
+            padding: 8px 0;
+            color: #999;
+            font-size: 0.9rem;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .pricing-card ul li::before {
+            content: "✓";
+            color: #44ff88;
+            font-weight: 700;
+        }
+
+        /* Form / Waitlist */
+        .waitlist {
+            padding: 100px 0;
+            background: rgba(255,255,255,0.02);
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .waitlist .container {
+            max-width: 600px;
+            text-align: center;
+        }
+        .waitlist h2 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+        .waitlist p {
+            color: #888;
+            margin-bottom: 40px;
+            font-size: 1.05rem;
+        }
+        .waitlist-form {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .waitlist-form input {
+            flex: 1;
+            min-width: 220px;
+            padding: 14px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            font-size: 1rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .waitlist-form input:focus {
+            border-color: #ff6633;
+        }
+        .waitlist-form input::placeholder {
+            color: #555;
+        }
+
+        /* Footer */
+        footer {
+            padding: 40px 0;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            text-align: center;
+            color: #555;
+            font-size: 0.85rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero { padding: 60px 0 40px; }
+            .features { padding: 60px 0; }
+            .market-gap .container {
+                grid-template-columns: 1fr;
+                gap: 32px;
+            }
+            .pricing { padding: 60px 0; }
+            .waitlist { padding: 60px 0; }
+            .hero-stats { gap: 24px; }
+            .hero-stat h3 { font-size: 1.5rem; }
+            .nav-links { display: none; }
+        }
+
+        /* Simple success message (hidden by default) */
+        #form-success {
+            display: none;
+            padding: 24px;
+            background: rgba(68, 255, 136, 0.1);
+            border: 1px solid rgba(68, 255, 136, 0.2);
+            border-radius: 12px;
+            color: #88ffbb;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+
+    <!-- Nav -->
+    <nav class="container">
+        <div class="logo">Prod<span>Find</span></div>
+        <div class="nav-links">
+            <a href="#features">Recursos</a>
+            <a href="#pricing">Preços</a>
+            <a href="#waitlist" class="btn btn-primary" style="padding: 8px 20px; font-size: 0.85rem;">Lista de Espera</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero container">
+        <div class="hero-badge">🚀 Em pré-lançamento</div>
+        <h1>
+            Descubra <span class="highlight">produtos campeões</span><br>
+            para TikTok Shop & Mercado Livre
+        </h1>
+        <p>
+            Chega de passar horas caçando produtos. O ProdFind monitora milhares de produtos em tempo real, 
+            analisa lives do TikTok, tendências do Mercado Livre e margens de fornecedores pra te mostrar 
+            exatamente o que vender — e quanto você pode ganhar.
+        </p>
+        <div class="hero-actions">
+            <a href="#waitlist" class="btn btn-primary">📋 Entrar na Lista de Espera</a>
+            <a href="#features" class="btn btn-secondary">Saber Mais</a>
+        </div>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <h3>10K+</h3>
+                <p>Produtos analisados/dia</p>
+            </div>
+            <div class="hero-stat">
+                <h3>TikTok + ML</h3>
+                <p>Plataformas integradas</p>
+            </div>
+            <div class="hero-stat">
+                <h3>Em breve</h3>
+                <p>Lançamento Q3 2026</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Market Gap -->
+    <section class="market-gap">
+        <div class="container">
+            <div>
+                <h2>O problema que todo seller enfrenta</h2>
+                <p>
+                    As ferramentas internacionais custam caro (US$100-500/mês), os dados pro Brasil são imprecisos, 
+                    e nenhuma integra TikTok Shop + Mercado Livre + dropshipping em um lugar só.
+                </p>
+                <ul class="gap-list">
+                    <li>Ferramentas internacionais com dados fracos pro Brasil</li>
+                    <li>Preços em dólar — inviável pra pequenos sellers</li>
+                    <li>Nenhuma ferramenta integra TikTok + ML + CJ</li>
+                    <li>Horas perdidas pesquisando produto por produto</li>
+                </ul>
+            </div>
+            <div>
+                <h2>O que o ProdFind resolve</h2>
+                <p>
+                    Uma ferramenta 100% brasileira, com dados reais do mercado nacional, 
+                    preço justo e integração direta com os maiores marketplaces.
+                </p>
+                <ul class="solution-list">
+                    <li>Score de "potencial de produto campeão" com IA</li>
+                    <li>Dados precisos de tendências TikTok Shop Brasil</li>
+                    <li>Comparação de margem: fornecedor → ML → seu lucro</li>
+                    <li>Alerta de produtos explosivos em tempo real</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-tag">Funcionalidades</div>
+            <h2>Tudo que você precisa pra achar o próximo campeão</h2>
+            <p>Monitoramento inteligente em múltiplas fontes pra você nunca perder uma oportunidade.</p>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: rgba(255,50,100,0.15);">📱</div>
+                    <h3>TikTok Shop Spy</h3>
+                    <p>Monitora lives, produtos mais vendidos e tendências emergentes no TikTok Shop Brasil. Saiba o que está bombando antes da concorrência.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: rgba(0,200,255,0.15);">📦</div>
+                    <h3>Mercado Livre Trends</h3>
+                    <p>Analisa volumes de venda, preços médios e concorrência no ML. Descubra produtos com alta demanda e baixa oferta.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: rgba(120,80,255,0.15);">🔗</div>
+                    <h3>Match Fornecedor + ML</h3>
+                    <p>Encontre o mesmo produto no CJ Dropshipping/AliExpress e veja a margem real com frete, impostos e taxa ML já calculados.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: rgba(255,200,0,0.15);">🎯</div>
+                    <h3>Score de Potencial (IA)</h3>
+                    <p>Nosso modelo ML classifica produtos de 0 a 100 com base em: tendência, margem, concorrência e sazonalidade.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: rgba(255,100,50,0.15);">🔔</div>
+                    <h3>Alertas em Tempo Real</h3>
+                    <p>Receba notificação quando um produto começar a bombar no TikTok ou quando surgir uma oportunidade com margem alta no ML.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: rgba(50,255,150,0.15);">📊</div>
+                    <h3>Dashboard Completo</h3>
+                    <p>Visualize tendências, compare produtos, acompanhe margens e exporte relatórios. Tudo em um lugar.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="pricing" id="pricing">
+        <div class="container">
+            <div class="section-tag" style="text-align: center;">Preços</div>
+            <h2>Simples e justo</h2>
+            <p>Preço em Real, sem surpresas. Cancele quando quiser.</p>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h3>Explorador</h3>
+                    <div class="price">R$ 0 <span>/mês</span></div>
+                    <ul>
+                        <li>10 produtos analisados/dia</li>
+                        <li>Tendências TikTok Shop</li>
+                        <li>Alertas básicos</li>
+                        <li>Atualização diária</li>
+                    </ul>
+                    <a href="#waitlist" class="btn btn-secondary" style="width:100%;justify-content:center;">Começar Grátis</a>
+                </div>
+                <div class="pricing-card featured">
+                    <h3>Profissional</h3>
+                    <div class="price">R$ 97 <span>/mês</span></div>
+                    <ul>
+                        <li>Produtos ilimitados</li>
+                        <li>TikTok Shop + ML + CJ</li>
+                        <li>Score de potencial IA</li>
+                        <li>Alertas em tempo real</li>
+                        <li>Comparação de margem</li>
+                        <li>Suporte via WhatsApp</li>
+                    </ul>
+                    <a href="#waitlist" class="btn btn-primary" style="width:100%;justify-content:center;">Quero Esse Plano</a>
+                </div>
+                <div class="pricing-card">
+                    <h3>Agência</h3>
+                    <div class="price">R$ 297 <span>/mês</span></div>
+                    <ul>
+                        <li>Tudo do Profissional +</li>
+                        <li>Até 5 usuários</li>
+                        <li>API de integração</li>
+                        <li>White-label disponível</li>
+                        <li>Relatórios customizados</li>
+                        <li>Prioridade no suporte</li>
+                    </ul>
+                    <a href="#waitlist" class="btn btn-secondary" style="width:100%;justify-content:center;">Falar com Vendas</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Waitlist -->
+    <section class="waitlist" id="waitlist">
+        <div class="container">
+            <h2>🚀 Entre na lista de espera</h2>
+            <p>
+                Seja um dos primeiros a testar o ProdFind. Os primeiros 100 inscritos ganham 
+                <strong style="color:#fff;">3 meses grátis</strong> do plano Profissional.
+            </p>
+            <form class="waitlist-form" id="waitlist-form" action="https://formspree.io/f/xpzngwvr" method="POST">
+                <input type="hidden" name="_subject" value="Novo lead ProdFind!">
+                <input type="email" name="email" placeholder="Seu melhor email" required>
+                <input type="text" name="name" placeholder="Seu nome" style="min-width:160px;">
+                <button type="submit" class="btn btn-primary">Quero Acesso Antecipado</button>
+            </form>
+            <p style="margin-top: 16px; font-size: 0.85rem; color: #555;">
+                🔒 Sem spam. 1 email por semana no máximo.
+            </p>
+            <div id="form-success">
+                ✅ Recebemos seu contato! Você será avisado assim que o ProdFind lançar. Enquanto isso, já vai seguindo @prodfind no Instagram!
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="container">
+        <p>© 2026 ProdFind — Feito no Brasil 🇧🇷 para sellers brasileiros</p>
+    </footer>
+
+    <script>
+        // Form submission with fetch (avoids page reload)
+        const form = document.getElementById('waitlist-form');
+        const successMsg = document.getElementById('form-success');
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = new FormData(form);
+            
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: data,
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                if (response.ok) {
+                    form.reset();
+                    form.style.display = 'none';
+                    successMsg.style.display = 'block';
+                } else {
+                    alert('Ops! Algo deu errado. Tenta de novo ou manda direct no Instagram @prodfind.');
+                }
+            } catch (err) {
+                alert('Erro de conexão. Mas anotei seu interesse! Manda email pra prodfind@email.com');
+            }
+        });
+    </script>
+</body>
+</html>
