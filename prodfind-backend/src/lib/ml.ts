@@ -1,7 +1,19 @@
 // Integração com a API do Mercado Livre (site MLB = Brasil).
-// Search funciona anônimo na maioria dos IPs; de datacenters/VMs o ML pode
-// responder 403 — nesse caso, configure ML_APP_ID/ML_APP_SECRET e a chamada
-// vira autenticada (Bearer token), com limites maiores.
+//
+// DESCOBERTA 23/07 (testado daqui de Cuiabá/Claro):
+//  - A busca LEGADA `/sites/MLB/search` e o endpoint de anúncio `/items/{id}`
+//    ESTÃO BLOQUEADOS (403/404). Provável: falta da permissão
+//    "Leitura de anúncios" na app OU WAF de IP nas APIs legadas.
+//  - A API de CATÁLOGO `/products/search` FUNCIONA autenticada e traz
+//    nome / categoria (domain_id) / atributos / children_ids.
+//  - Preço e vendas (sold_quantity) ficam no nível de ANÚNCIO (listing),
+//    só entram quando a permissão de listing for liberada (ou rodar de IP liberado).
+//
+// Estratégia atual: usar /products/search (catálogo) como base. Quando a
+// permissão de anúncios estiver OK, enriquecemos com preço/vendas via
+// buy_box_winner ou /items/{id}.
+//
+// Fluxo de auth: client_credentials -> Bearer token -> chamadas.
 
 import { env } from "./env";
 
@@ -45,6 +57,9 @@ export type MLItem = {
   permalink: string;
   thumbnail: string;
   seller?: { nickname: string };
+  domain_id?: string;
+  children_count?: number;
+  listing_data_available: boolean;
 };
 
 export async function mlSearch(q: string, limit = 12): Promise<MLItem[]> {
@@ -56,27 +71,35 @@ export async function mlSearch(q: string, limit = 12): Promise<MLItem[]> {
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const url = `https://api.mercadolibre.com/sites/MLB/search?q=${encodeURIComponent(
+  // Catálogo: funciona autenticado (busca legada /sites/MLB/search está bloqueada).
+  const url = `https://api.mercadolibre.com/products/search?site_id=MLB&q=${encodeURIComponent(
     q
   )}&limit=${limit}`;
 
   const res = await fetch(url, { headers, cache: "no-store" });
   if (!res.ok) {
-    // 403 de IP bloqueado cai aqui — esperado em alguns ambientes
+    // 403/404 das APIs legadas cai aqui — esperado até liberar permissão de anúncios
     throw new Error(`MercadoLivre ${res.status}`);
   }
 
   const data: unknown = await res.json();
   const results = (data as { results?: any[] }).results ?? [];
 
-  return results.map((r) => ({
-    id: String(r.id),
-    title: r.title,
-    price: Number(r.price) || 0,
-    price_avg: Number(r.original_price) || Number(r.price) || 0,
-    sold: Number(r.sold_quantity) || 0,
-    permalink: r.permalink,
-    thumbnail: r.thumbnail,
-    seller: r.seller ? { nickname: r.seller.nickname } : undefined,
-  }));
+  return results.map((r) => {
+    const pictures: any[] = r.pictures ?? [];
+    const pic = pictures[0];
+    return {
+      id: String(r.catalog_product_id ?? r.id),
+      title: r.name ?? "",
+      // Preço/vendas ficam no nível de anúncio (bloqueado por ora).
+      price: 0,
+      price_avg: 0,
+      sold: 0,
+      permalink: r.permalink ?? "",
+      thumbnail: pic?.url ?? pic?.secure_url ?? "",
+      domain_id: r.domain_id,
+      children_count: (r.children_ids ?? []).length,
+      listing_data_available: false,
+    };
+  });
 }
