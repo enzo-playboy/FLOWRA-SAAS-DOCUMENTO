@@ -10,6 +10,7 @@ export const env = {
   redisToken: process.env.REDIS_TOKEN ?? "",
   mlAppId: process.env.ML_APP_ID ?? "",
   mlAppSecret: process.env.ML_APP_SECRET ?? "",
+  mlUserToken: process.env.ML_USER_TOKEN ?? "",
 };
 
 export const isSupabaseConfigured = Boolean(
