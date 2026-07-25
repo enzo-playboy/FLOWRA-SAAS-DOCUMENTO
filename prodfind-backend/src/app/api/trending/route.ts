@@ -31,24 +31,54 @@ export async function GET(req: NextRequest) {
     30
   );
 
-  const parsed = trendingQuerySchema.safeParse({ category });
+  // strings vazias viram undefined p/ não ativarem coerção indesejada
+  const str = (k: string) => {
+    const v = req.nextUrl.searchParams.get(k);
+    return v != null && v.trim() !== "" ? v.trim() : undefined;
+  };
+
+  const parsed = trendingQuerySchema.safeParse({
+    category,
+    minPrice: str("minPrice"),
+    maxPrice: str("maxPrice"),
+    sellerId: str("sellerId"),
+    minPosition: str("minPosition"),
+    q: str("q"),
+    sort: str("sort"),
+  });
   if (!parsed.success) {
-    return NextResponse.json({ error: "categoria inválida" }, { status: 400 });
+    return NextResponse.json(
+      { error: "parâmetros inválidos", detail: parsed.error.issues },
+      { status: 400 }
+    );
   }
 
-  const cacheKey = `trending:${parsed.data.category}:${limit}`;
+  const f = parsed.data;
+  const cacheKey = `trending:${f.category}:${f.minPrice ?? ""}:${f.maxPrice ?? ""}:${f.sellerId ?? ""}:${f.minPosition ?? ""}:${f.q ?? ""}:${f.sort ?? ""}:${limit}`;
   const cached = await cacheGet<TrendingProduct[]>(cacheKey);
   if (cached) {
     return NextResponse.json({ items: cached, cached: true });
   }
 
   try {
-    const items = await getTrendingByCategory(parsed.data.category, limit);
+    const items = await getTrendingByCategory(f.category, {
+      minPrice: f.minPrice,
+      maxPrice: f.maxPrice,
+      sellerId: f.sellerId,
+      minPosition: f.minPosition,
+      q: f.q,
+      sort: f.sort,
+      limit,
+    });
     await cacheSet(cacheKey, items, CACHE_TTL);
     return NextResponse.json({ items, cached: false });
-  } catch {
+  } catch (e: any) {
     return NextResponse.json(
-      { error: "falha ao buscar no Mercado Livre" },
+      {
+        error: "falha ao buscar no Mercado Livre",
+        detail: String(e?.message || e),
+        cause: String(e?.cause?.message || e?.cause || ""),
+      },
       { status: 502 }
     );
   }
