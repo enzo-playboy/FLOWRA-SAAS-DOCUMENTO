@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { rateLimit } from "@/lib/ratelimit";
+import { enforceRateLimit } from "@/lib/withRateLimit";
 import { leadSchema } from "@/lib/validate";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -8,16 +8,9 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: NextRequest) {
-  // rate limit por IP (evita bot derrubar o serviço)
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anon";
-  const rl = await rateLimit(`leads:${ip}`, 10, 60);
-  if (!rl.ok) {
-    return NextResponse.json(
-      { error: "muitas tentativas, tente depois" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
-    );
-  }
+  // rate limit (anon composite; passar userId quando sessão estiver wired)
+  const blocked = await enforceRateLimit("leads", req);
+  if (blocked) return blocked;
 
   let body: unknown;
   try {

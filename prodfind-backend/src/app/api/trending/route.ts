@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { rateLimit } from "@/lib/ratelimit";
+import { enforceRateLimit, enforceMlGuard } from "@/lib/withRateLimit";
 import { trendingQuerySchema } from "@/lib/validate";
 import { getTrendingByCategory, type TrendingProduct } from "@/lib/ml-highlights";
 import { cacheGet, cacheSet } from "@/lib/cache";
@@ -13,15 +13,8 @@ export async function OPTIONS() {
 }
 
 export async function GET(req: NextRequest) {
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anon";
-  const rl = await rateLimit(`trending:${ip}`, 30, 60);
-  if (!rl.ok) {
-    return NextResponse.json(
-      { error: "limite de requisições atingido, tente depois" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
-    );
-  }
+  const blocked = await enforceRateLimit("trending", req);
+  if (blocked) return blocked;
 
   const category =
     req.nextUrl.searchParams.get("category") ?? DEFAULT_CATEGORY;
@@ -60,6 +53,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ items: cached, cached: true });
   }
 
+  const mlBlocked = await enforceMlGuard();
+  if (mlBlocked) return mlBlocked;
   try {
     const items = await getTrendingByCategory(f.category, {
       minPrice: f.minPrice,

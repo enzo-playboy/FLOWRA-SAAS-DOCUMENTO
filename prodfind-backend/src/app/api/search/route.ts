@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { rateLimit } from "@/lib/ratelimit";
+import { enforceRateLimit, enforceMlGuard } from "@/lib/withRateLimit";
 import { searchQuerySchema } from "@/lib/validate";
 import { mlSearch, type MLItem } from "@/lib/ml";
 import { cacheGet, cacheSet } from "@/lib/cache";
@@ -22,15 +22,9 @@ export async function OPTIONS() {
 }
 
 export async function GET(req: NextRequest) {
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anon";
-  const rl = await rateLimit(`search:${ip}`, 30, 60);
-  if (!rl.ok) {
-    return NextResponse.json(
-      { error: "limite de buscas atingido, tente depois" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter) } }
-    );
-  }
+  // rate limit (identificador composite anon; passar userId quando sessão estiver wired)
+  const blocked = await enforceRateLimit("search", req);
+  if (blocked) return blocked;
 
   const q = req.nextUrl.searchParams.get("q") ?? "";
   const parsed = searchQuerySchema.safeParse({ q });
@@ -46,6 +40,8 @@ export async function GET(req: NextRequest) {
   }
 
   // 2) busca no Mercado Livre e enriquece com margem/imposto BR
+  const mlBlocked = await enforceMlGuard();
+  if (mlBlocked) return mlBlocked;
   try {
     const items = await mlSearch(parsed.data.q);
     // MVP: custo placeholder = 40% do preço (ajustar com CJ/AliExpress depois)
