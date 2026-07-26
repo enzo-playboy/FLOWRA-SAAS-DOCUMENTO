@@ -1,10 +1,10 @@
-// Rota pra criar assinatura (Stripe/Asaas).
-// POST /api/subscribe
+// Rota pra criar assinatura via Stripe Checkout.
+// POST /api/subscribe - cria sessão de checkout
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, unauthorized } from "@/lib/auth";
 import { createClient } from "@supabase/supabase-js";
-import crypto from "crypto";
+import { createCheckoutSession, PLAN_PRICES } from "@/lib/stripe";
 
 // Cliente Supabase com service role
 const supabase = createClient(
@@ -14,15 +14,6 @@ const supabase = createClient(
 
 type SubscribeInput = {
   plan: "start" | "pro" | "agency";
-  payment_method: "stripe" | "asaas";
-  payment_token?: string; // Token do cartão/PIX
-};
-
-// Preços por plano (em centavos)
-const PLAN_PRICES = {
-  start: 7900,   // R$79
-  pro: 14700,    // R$147
-  agency: 29700, // R$297
 };
 
 export async function POST(req: NextRequest) {
@@ -33,9 +24,9 @@ export async function POST(req: NextRequest) {
     // 2. Valida input
     const body: SubscribeInput = await req.json();
 
-    if (!body.plan || !body.payment_method) {
+    if (!body.plan) {
       return NextResponse.json(
-        { error: "plan e payment_method são obrigatórios" },
+        { error: "plan é obrigatório" },
         { status: 400 }
       );
     }
@@ -47,103 +38,72 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Gera idempotency key
-    const idempotencyKey = crypto
-      .createHash("sha256")
-      .update(`${auth.userId}:${body.plan}:${Date.now()}`)
-      .digest("hex");
-
-    // 4. Verifica idempotência
-    const { data: idempotencyCheck } = await supabase.rpc("check_idempotency", {
-      p_key: idempotencyKey,
-      p_user_id: auth.userId,
-      p_operation: "subscription",
-      p_request_hash: crypto
-        .createHash("sha256")
-        .update(JSON.stringify(body))
-        .digest("hex"),
-    });
-
-    if (idempotencyCheck && !idempotencyCheck.allowed) {
-      if (idempotencyCheck.status === "duplicate") {
-        return NextResponse.json(idempotencyCheck.response);
-      }
-      return NextResponse.json(
-        { error: "Conflito - tente novamente" },
-        { status: 409 }
-      );
-    }
-
-    // 5. Cria assinatura (simulado - integrar com Stripe/Asaas depois)
-    const subscription = {
-      id: crypto.randomUUID(),
-      user_id: auth.userId,
-      plan: body.plan,
-      status: "active",
-      payment_method: body.payment_method,
-      price: PLAN_PRICES[body.plan],
-      created_at: new Date().toISOString(),
-    };
-
-    // 6. Salva no Supabase
-    const { error: dbError } = await supabase
-      .from("subscriptions")
-      .insert({
-        id: subscription.id,
-        user_id: auth.userId,
-        plan: body.plan,
-        status: "active",
-      });
-
-    if (dbError) {
-      console.error("Erro ao salvar assinatura:", dbError);
-      return NextResponse.json(
-        { error: "Erro ao criar assinatura" },
-        { status: 500 }
-      );
-    }
-
-    // 7. Registra evento (dual-write)
-    await supabase.rpc("log_event", {
-      p_event_type: "subscription.created",
-      p_entity_type: "subscription",
-      p_entity_id: subscription.id,
-      p_payload: JSON.stringify(subscription),
-    });
-
-    // 8. Atualiza plano do usuário
-    await supabase
+    // 3. Busca dados do usuário
+    const { data: userData } = await supabase
       .from("users")
-      .update({ plan: body.plan, updated_at: new Date().toISOString() })
-      .eq("id", auth.userId);
+      .select("email")
+      .eq("id", auth.userId)
+      .single();
 
-    // 9. Marca idempotência como completa
-    await supabase
-      .from("idempotency_keys")
-      .upsert({
-        idempotency_key: idempotencyKey,
-        user_id: auth.userId,
-        operation: "subscription",
-        request_hash: crypto
-          .createHash("sha256")
-          .update(JSON.stringify(body))
-          .digest("hex"),
-        response: JSON.stringify(subscription),
-        status: "completed",
-      });
+    if (!userData?.email) {
+      return NextResponse.json(
+        { error: "Usuário não encontrado" },
+        { status: 404 }
+      );
+    }
 
+    // 4. Cria sessão de checkout no Stripe
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const session = await createCheckoutSession(
+      auth.userId,
+      userData.email,
+      body.plan,
+      `${baseUrl}/dashboard?success=true&plan=${body.plan}`,
+      `${baseUrl}/dashboard?canceled=true`
+    );
+
+    // 5. Retorna URL do checkout
     return NextResponse.json({
       status: "OK",
-      subscription,
+      checkoutUrl: session.url,
+      sessionId: session.id,
     });
   } catch (error: any) {
     if (error.message === "UNAUTHORISED") {
       return unauthorized();
     }
 
-    console.error("Erro interno:", error);
+    console.error("Erro ao criar checkout:", error);
     return NextResponse.json(
-      { error: "Erro interno no servidor" },
+      { error: "Erro ao criar sessão de pagamento" },
+      { status: 500 }
+    );
+  }
+}
+
+// GET pra verificar assinatura atual
+export async function GET(req: NextRequest) {
+  try {
+    const auth = await requireAuth(req);
+
+    const { data: subscription } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", auth.userId)
+      .eq("status", "active")
+      .single();
+
+    return NextResponse.json({
+      status: "OK",
+      subscription: subscription || null,
+    });
+  } catch (error: any) {
+    if (error.message === "UNAUTHORISED") {
+      return unauthorized();
+    }
+
+    return NextResponse.json(
+      { error: "Erro interno" },
       { status: 500 }
     );
   }
