@@ -80,6 +80,7 @@ Decisão validada empiricamente (24–25/07): o endpoint de busca `/sites/MLB/se
 | Rota | Anônimo | Autenticado | Notas |
 | `/api/search` | 5/min | 20/min* | *sobe p/ 30 após 2 semanas de dados; core ML |
 | `/api/trending` | 10/min | 40/min* | *sobe p/ 60 após dados; já tinha 30/min/IP |
+| `/api/category-tree` | 10/min | 40/min | reusa limite de trending; metadados ML públicos (sem token) |
 | `/api/leads` | 3/min | 3/min | anti-spam |
 | `/api/auth/*` | 20/min | 20/min | ⚠️ 5/min travava refresh/login (self-lockout) |
 | `/api/saved-products` | 20/min | 60/min | escrita barata |
@@ -122,7 +123,8 @@ Base: `NEXT_PUBLIC_API_URL`. Legenda: ✅ built / 🔲 spec / ⬜ RFC.
 | POST | /api/auth/* | 🔲 (RFC-001 definido; Spec pendente) |
 | GET | /api/me | ⬜ (stub 401; RFC-001 desenha) |
 | GET | /api/search?q= | ✅ (rate limit + cache Redis + calcMargin BR) |
-| GET | /api/trending?... | ✅ (rate limit + cache + filtros) |
+| GET | /api/trending?category=&minPrice=&... | ✅ (rate limit + cache + filtros; `category` seleciona o nicho) |
+| GET | /api/category-tree | ✅ (busca por nome via `?q=` ou drill-down via `?id=`; metadados ML públicos, sem token) |
 | POST | /api/saved-products | ⬜ |
 | GET | /api/saved-products | ⬜ |
 | POST | /api/alerts | ⬜ |

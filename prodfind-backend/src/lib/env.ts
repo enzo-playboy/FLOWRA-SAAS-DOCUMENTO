@@ -1,3 +1,29 @@
+import { readFileSync } from "fs";
+import { join } from "path";
+
+// Carrega .env / .env.local explicitamente (além do auto-load do Next) para
+// garantir que as credenciais do ML estejam disponíveis em QUALQUER runtime
+// (Next dev, node script, serverless). Só preenche o que estiver ausente.
+function loadEnvFile(p: string) {
+  try {
+    const raw = readFileSync(p, "utf8");
+    for (const line of raw.split("\n")) {
+      const t = line.trim();
+      if (!t || t.startsWith("#")) continue;
+      const i = t.indexOf("=");
+      if (i === -1) continue;
+      const k = t.slice(0, i).trim();
+      const v = t.slice(i + 1).trim().replace(/^["']|["']$/g, "");
+      if (process.env[k] === undefined) process.env[k] = v;
+    }
+  } catch {
+    // arquivo ausente — ignora
+  }
+}
+const __root = process.cwd();
+loadEnvFile(join(__root, ".env"));
+loadEnvFile(join(__root, ".env.local"));
+
 // Leitura segura de env vars. Nunca quebra o build se faltar algo —
 // quem usa verifica o flag (isSupabaseConfigured / isRedisConfigured).
 

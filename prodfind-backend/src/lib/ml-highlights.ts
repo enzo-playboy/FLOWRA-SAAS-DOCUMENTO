@@ -52,7 +52,7 @@ async function getAppToken(): Promise<string | null> {
 }
 
 // app-token primeiro (estável); fallback p/ user-token do env.
-async function resolveToken(): Promise<string | null> {
+export async function resolveToken(): Promise<string | null> {
   const app = await getAppToken();
   if (app) return app;
   return env.mlUserToken || null;
