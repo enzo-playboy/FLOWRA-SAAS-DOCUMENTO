@@ -31,10 +31,15 @@ CREATE POLICY "users_update_own" ON users
   FOR UPDATE
   USING (auth.uid() = id);
 
--- Usuários criam sua própria conta (via trigger do SuperTokens)
+-- Usuários criam sua própria conta
 CREATE POLICY "users_insert_own" ON users
   FOR INSERT
   WITH CHECK (auth.uid() = id);
+
+-- Service role pode tudo (backend)
+CREATE POLICY "users_service_all" ON users
+  FOR ALL
+  USING (auth.role() = 'service_role');
 
 -- =============================================
 -- POLICIES: SUBSCRIPTIONS
@@ -50,12 +55,12 @@ CREATE POLICY "subscriptions_insert_own" ON subscriptions
   FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
--- Usuários atualizam suas assinaturas (ex: cancelar)
+-- Usuários atualizam suas assinaturas
 CREATE POLICY "subscriptions_update_own" ON subscriptions
   FOR UPDATE
   USING (auth.uid() = user_id);
 
--- Service role pode fazer tudo (backend)
+-- Service role pode tudo
 CREATE POLICY "subscriptions_service_all" ON subscriptions
   FOR ALL
   USING (auth.role() = 'service_role');
@@ -79,13 +84,13 @@ CREATE POLICY "favorites_delete_own" ON user_favorites
   FOR DELETE
   USING (auth.uid() = user_id);
 
--- Service role pode fazer tudo
+-- Service role pode tudo
 CREATE POLICY "favorites_service_all" ON user_favorites
   FOR ALL
   USING (auth.role() = 'service_role');
 
 -- =============================================
--- POLICIES: IDEMPOTENCY_KEYS
+-- POLICIES: TABELAS INTERNAS (só service_role)
 -- =============================================
 
 -- Apenas service role acessa (backend controla)
@@ -93,57 +98,26 @@ CREATE POLICY "idempotency_service_all" ON idempotency_keys
   FOR ALL
   USING (auth.role() = 'service_role');
 
--- =============================================
--- POLICIES: EVENT_LOG
--- =============================================
-
--- Apenas service role acessa
 CREATE POLICY "eventlog_service_all" ON event_log
   FOR ALL
   USING (auth.role() = 'service_role');
 
--- =============================================
--- POLICIES: DEAD_LETTER_QUEUE
--- =============================================
-
--- Apenas service role acessa
 CREATE POLICY "dlq_service_all" ON dead_letter_queue
   FOR ALL
   USING (auth.role() = 'service_role');
 
--- =============================================
--- POLICIES: CIRCUIT_BREAKER
--- =============================================
-
--- Apenas service role acessa
 CREATE POLICY "circuitbreaker_service_all" ON circuit_breaker
   FOR ALL
   USING (auth.role() = 'service_role');
 
--- =============================================
--- POLICIES: CACHE_LOCKS
--- =============================================
-
--- Apenas service role acessa
 CREATE POLICY "cachelocks_service_all" ON cache_locks
   FOR ALL
   USING (auth.role() = 'service_role');
 
 -- =============================================
--- FUNÇÕES AUXILIARES PRA RLS
--- =============================================
-
--- Função pra pegar user_id do JWT
-CREATE OR REPLACE FUNCTION auth.uid()
-RETURNS UUID AS $$
-  SELECT NULLIF(current_setting('request.jwt.claims', true)::json->>'sub', '')::UUID;
-$$ LANGUAGE sql STABLE;
-
--- =============================================
 -- HABILITA REALTIME PRA TABELAS IMPORTANTES
 -- =============================================
 
--- Permite que o frontend ouça mudanças em tempo real
 ALTER PUBLICATION supabase_realtime ADD TABLE users;
 ALTER PUBLICATION supabase_realtime ADD TABLE subscriptions;
 ALTER PUBLICATION supabase_realtime ADD TABLE user_favorites;
@@ -152,15 +126,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE user_favorites;
 -- GRANTS PRA SERVICE ROLE
 -- =============================================
 
--- Service role tem acesso total (backend)
 GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
-GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
 
 -- =============================================
--- VERIFICAÇÃO
+-- ANON PODE LER DADOS PÚBLICOS (se necessário)
 -- =============================================
 
--- Rode essas queries pra verificar se RLS está ativo:
--- SELECT tablename, rowsecurity FROM pg_tables WHERE schemaname = 'public';
--- SELECT * FROM pg_policies WHERE schemaname = 'public';
+-- Se o frontend precisar de acesso anônimo a alguma tabela
+-- GRANT SELECT ON TABLE trending_products TO anon;
