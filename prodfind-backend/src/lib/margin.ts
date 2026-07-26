@@ -1,42 +1,95 @@
-// Cálculo de margem líquida com imposto de importação BR (MVP/simplificado).
-// II 60% + ICMS por estado + taxa dos Correios. Ajustar conforme regra real.
+// Cálculo de margem de lucro estimada.
+// MVP: cálculo simplificado com disclaimer.
 
-export type MarginInput = {
-  price: number; // preço de venda no ML
-  cost: number; // custo do fornecedor (CJ/AliExpress)
-  state?: string; // UF do comprador (p/ ICMS) — default "SP"
+export type MarginResult = {
+  mlPrice: number;
+  supplierCost: number;
+  shippingEstimate: number;
+  mlFees: number;
+  estimatedProfit: number;
+  marginPercent: number;
+  disclaimer: string;
 };
 
-const II_RATE = 0.6; // Imposto de Importação (60% sobre o custo)
-const CORREIOS_TAX = 0.6; // taxa dos Correios (simplificada, ~60% sobre o custo)
-
-// Tabela simples de ICMS por estado (alíquota interna). Completar conforme necessário.
-const ICMS_BY_STATE: Record<string, number> = {
-  AC: 0.17, AL: 0.17, AP: 0.17, AM: 0.18, BA: 0.18, CE: 0.17, DF: 0.18,
-  ES: 0.17, GO: 0.17, MA: 0.17, MT: 0.17, MS: 0.17, MG: 0.18, PA: 0.17,
-  PB: 0.17, PR: 0.19, PE: 0.18, PI: 0.17, RJ: 0.20, RN: 0.18, RS: 0.17,
-  RO: 0.17, RR: 0.17, SC: 0.17, SP: 0.18, SE: 0.17, TO: 0.17,
+// Taxas do ML por categoria (estimativas — fonte: tabela oficial ML 2024)
+const ML_FEES: Record<string, number> = {
+  "MLB-CELLPHONES": 0.14, // 14% comissão
+  "MLB-ELECTRONICS": 0.13,
+  "MLB-COMPUTER": 0.12,
+  "MLB-APPLIANCES": 0.11,
+  DEFAULT: 0.13, // 13% médio
 };
 
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
-}
+// Custo fixo estimado por venda no ML
+const FIXED_COST_PER_SALE = 5; // R$5 (custo fixo estimado)
 
-export function calcMargin({ price, cost, state = "SP" }: MarginInput) {
-  const icms = ICMS_BY_STATE[state.toUpperCase()] ?? 0.17;
-  const ii = cost * II_RATE;
-  const icmsValue = (cost + ii) * icms;
-  const correios = cost * CORREIOS_TAX;
-  const tax = ii + icmsValue + correios;
-  const net = price - cost - tax;
-  const marginPct = price > 0 ? (net / price) * 100 : 0;
+/**
+ * Calcula margem de lucro estimada.
+ *
+ * IMPORTANTE: Este é um cálculo ESTIMATIVO.
+ * O resultado real depende de:
+ * - Preço exato do fornecedor (varia por vendedor)
+ * - Frete internacional (varia por peso/região)
+ * - Impostos de importação (ICMS, II, PIS/COFINS)
+ * - Câmbio USD/BRL no momento da compra
+ *
+ * Usar APENAS como referência, não como dado exato.
+ */
+export function calculateMargin(
+  mlPrice: number,
+  supplierCostBRL: number,
+  domainId: string | null,
+  shippingBRL: number = 50 // frete estimado padrão
+): MarginResult {
+  // Comissão do ML
+  const feeKey = domainId || "DEFAULT";
+  const feeRate = ML_FEES[feeKey] || ML_FEES.DEFAULT;
+  const mlFee = mlPrice * feeRate;
+
+  // Custo total
+  const totalCost = supplierCostBRL + shippingBRL + mlFee + FIXED_COST_PER_SALE;
+
+  // Lucro estimado
+  const profit = mlPrice - totalCost;
+
+  // Margem percentual
+  const marginPercent = mlPrice > 0 ? (profit / mlPrice) * 100 : 0;
 
   return {
-    imposto_importacao: round2(ii),
-    icms: round2(icmsValue),
-    taxa_correios: round2(correios),
-    custo_total: round2(cost + tax),
-    margem_liquida: round2(net),
-    margem_pct: round2(marginPct),
+    mlPrice,
+    supplierCost: supplierCostBRL,
+    shippingEstimate: shippingBRL,
+    mlFees: Math.round(mlFee),
+    estimatedProfit: Math.round(profit),
+    marginPercent: Math.round(marginPercent * 10) / 10,
+    disclaimer:
+      "⚠️ Margem ESTIMATIVA. Preço do fornecedor, frete e impostos podem variar. Valide antes de comprar.",
   };
 }
+
+/**
+ * Wrapper legado (usado em search/route.ts).
+ * Assinatura antiga: calcMargin({ price, cost })
+ */
+export function calcMargin({
+  price,
+  cost,
+  domainId,
+  shipping,
+}: {
+  price: number;
+  cost: number;
+  domainId?: string;
+  shipping?: number;
+}) {
+  const result = calculateMargin(price, cost, domainId ?? null, shipping ?? 50);
+  // Mapeia pro formato legado que search/route.ts espera
+  return {
+    imposto_importacao: 0,
+    icms: 0,
+    taxa_correios: 0,
+    custo_total: result.supplierCost + result.shippingEstimate,
+    margem_liquida: result.estimatedProfit,
+    margem_pct: result.marginPercent,
+  };
+ }

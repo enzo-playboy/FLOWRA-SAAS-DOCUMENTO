@@ -3,6 +3,8 @@ import { enforceRateLimit, enforceMlGuard } from "@/lib/withRateLimit";
 import { trendingQuerySchema } from "@/lib/validate";
 import { getTrendingByCategory, type TrendingProduct } from "@/lib/ml-highlights";
 import { cacheGet, cacheSet } from "@/lib/cache";
+import { getSupplierLinks, estimateSupplierPrice } from "@/lib/suppliers";
+import { calculateMargin } from "@/lib/margin";
 
 const CACHE_TTL = 60 * 10; // 10 min
 // Categoria testada que o /highlights resolve como contexto (fallback).
@@ -65,8 +67,27 @@ export async function GET(req: NextRequest) {
       sort: f.sort,
       limit,
     });
-    await cacheSet(cacheKey, items, CACHE_TTL);
-    return NextResponse.json({ items, cached: false });
+
+    // Enriquece cada produto com links de fornecedores e margem estimada
+    const enriched = items.map((item) => {
+      const supplierLinks = getSupplierLinks(item.name);
+      const supplierEstimate = estimateSupplierPrice(item.price, item.domain_id);
+      const margin = calculateMargin(
+        item.price,
+        supplierEstimate.min, // usa estimativa mínima (melhor caso)
+        item.domain_id
+      );
+
+      return {
+        ...item,
+        suppliers: supplierLinks,
+        supplierPriceEstimate: supplierEstimate,
+        margin,
+      };
+    });
+
+    await cacheSet(cacheKey, enriched, CACHE_TTL);
+    return NextResponse.json({ items: enriched, cached: false });
   } catch (e: any) {
     return NextResponse.json(
       {
